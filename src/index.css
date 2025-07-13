@@ -1,0 +1,197 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  body {
+    font-family: 'Rajdhani', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    line-height: 1.5;
+    background: #0A0A0A;
+    color: #ffffff;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+  }
+}
+
+@layer components {
+  .glassmorphism {
+    background: rgba(17, 17, 17, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(147, 51, 234, 0.2);
+    box-shadow: 0 8px 32px rgba(147, 51, 234, 0.1);
+  }
+  
+  .glassmorphism-blue {
+    background: rgba(17, 17, 17, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, #9333EA 0%, #3B82F6 50%, #06B6D4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .neon-text {
+    color: #A855F7;
+    text-shadow: 
+      0 0 5px rgba(168, 85, 247, 0.8),
+      0 0 10px rgba(168, 85, 247, 0.6),
+      0 0 15px rgba(168, 85, 247, 0.4);
+  }
+  
+  .neon-border {
+    border: 1px solid #9333EA;
+    box-shadow: 
+      0 0 5px rgba(147, 51, 234, 0.5),
+      inset 0 0 5px rgba(147, 51, 234, 0.2);
+  }
+  
+  .cyber-grid {
+    background-image: 
+      linear-gradient(rgba(147, 51, 234, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(147, 51, 234, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #9333EA, #3B82F6);
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 10px rgba(147, 51, 234, 0.5);
+  }
+  
+  .slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #9333EA, #3B82F6);
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 10px rgba(147, 51, 234, 0.5);
+  }
+  
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(147, 51, 234, 0.8) 0%, rgba(59, 130, 246, 0.4) 50%, transparent 100%);
+    animation: particleFloat 20s linear infinite;
+  }
+  
+  .honeyphish-logo {
+    font-family: 'Orbitron', monospace;
+    font-weight: 800;
+    background: linear-gradient(135deg, #9333EA 0%, #3B82F6 50%, #06B6D4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 20px rgba(147, 51, 234, 0.5);
+  }
+}
+
+/* Custom scrollbar with neon theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(17, 17, 17, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #9333EA, #3B82F6);
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(147, 51, 234, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #A855F7, #60A5FA);
+  box-shadow: 0 0 15px rgba(147, 51, 234, 0.5);
+}
+
+/* Loading animation with neon theme */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Smooth transitions with enhanced effects */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* Neon glow effects */
+.glow-on-hover {
+  transition: all 0.3s ease;
+}
+
+.glow-on-hover:hover {
+  box-shadow: 
+    0 0 20px rgba(147, 51, 234, 0.6),
+    0 0 40px rgba(147, 51, 234, 0.4),
+    0 0 60px rgba(147, 51, 234, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Futuristic button styles */
+.cyber-button {
+  position: relative;
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.2), rgba(59, 130, 246, 0.2));
+  border: 1px solid #9333EA;
+  color: #A855F7;
+  overflow: hidden;
+}
+
+.cyber-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(147, 51, 234, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.cyber-button:hover::before {
+  left: 100%;
+}
+
+/* Enhanced card animations */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 
+    0 20px 40px rgba(147, 51, 234, 0.3),
+    0 0 0 1px rgba(147, 51, 234, 0.2);
+}
+
+/* Pulsing elements */
+.pulse-glow {
+  animation: neonPulse 3s ease-in-out infinite;
+}
