@@ -1,19 +1,24 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { DataProvider } from './contexts/DataContext';
 import { ToastProvider } from './contexts/ToastContext';
 import ParticleBackground from './components/ParticleBackground';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import EnhancedDashboard from './pages/EnhancedDashboard';
+import VendorDashboard from './pages/VendorDashboard';
 import VendorPortal from './pages/VendorPortal';
 import Assessment from './pages/Assessment';
+import VendorAssessment from './pages/VendorAssessment';
 import PhishingTests from './pages/PhishingTests';
 import PhishingInbox from './pages/PhishingInbox';
 import PhishingFail from './pages/PhishingFail';
 import Leaderboard from './pages/Leaderboard';
 import AuditLogs from './pages/AuditLogs';
+import VendorDocuments from './pages/VendorDocuments';
+import AIAssistant from './pages/AIAssistant';
 import Login from './pages/Login';
 import { useAuth } from './hooks/useAuth';
 
@@ -23,7 +28,7 @@ function AppContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-honey-purple"></div>
       </div>
     );
   }
@@ -31,6 +36,10 @@ function AppContent() {
   if (!user) {
     return <Login />;
   }
+
+  // Role-based routing
+  const isAdmin = user.role === 'admin';
+  const isVendor = user.role === 'vendor';
 
   return (
     <div className="min-h-screen bg-dark-bg text-white relative overflow-hidden">
@@ -42,13 +51,33 @@ function AppContent() {
           <main className="p-6">
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<EnhancedDashboard />} />
-              <Route path="/vendors" element={<VendorPortal />} />
-              <Route path="/assessment" element={<Assessment />} />
-              <Route path="/phishing" element={<PhishingTests />} />
+              
+              {/* Admin Routes */}
+              {isAdmin && (
+                <>
+                  <Route path="/dashboard" element={<EnhancedDashboard />} />
+                  <Route path="/vendors" element={<VendorPortal />} />
+                  <Route path="/phishing" element={<PhishingTests />} />
+                  <Route path="/audit" element={<AuditLogs />} />
+                </>
+              )}
+              
+              {/* Vendor Routes */}
+              {isVendor && (
+                <>
+                  <Route path="/dashboard" element={<VendorDashboard />} />
+                  <Route path="/assessment" element={<VendorAssessment />} />
+                  <Route path="/documents" element={<VendorDocuments />} />
+                  <Route path="/assistant" element={<AIAssistant />} />
+                </>
+              )}
+              
+              {/* Shared Routes */}
               <Route path="/phishing-inbox" element={<PhishingInbox />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/audit" element={<AuditLogs />} />
+              
+              {/* Fallback for unauthorized routes */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </main>
         </div>
@@ -66,9 +95,11 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <ToastProvider>
-          <AppContent />
-        </ToastProvider>
+        <DataProvider>
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
+        </DataProvider>
       </AuthProvider>
     </Router>
   );

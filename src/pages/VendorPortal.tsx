@@ -13,85 +13,23 @@ import {
   Trash2,
   Mail,
   Flag,
+  Download,
+  Users,
 } from 'lucide-react';
+import { useData } from '../contexts/DataContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
-
-interface Vendor {
-  id: string;
-  name: string;
-  email: string;
-  trustScore: number;
-  riskLevel: 'low' | 'medium' | 'high';
-  lastAssessment: string;
-  status: 'active' | 'pending' | 'inactive';
-  industry: string;
-}
+import { Vendor } from '../types';
 
 const VendorPortal: React.FC = () => {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const { vendors } = useData();
   const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRisk, setFilterRisk] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('trustScore');
-
-  useEffect(() => {
-    // Simulate loading vendors
-    const mockVendors: Vendor[] = [
-      {
-        id: '1',
-        name: 'TechCorp Solutions',
-        email: 'contact@techcorp.com',
-        trustScore: 92,
-        riskLevel: 'low',
-        lastAssessment: '2024-01-15',
-        status: 'active',
-        industry: 'Technology',
-      },
-      {
-        id: '2',
-        name: 'DataFlow Inc.',
-        email: 'info@dataflow.com',
-        trustScore: 45,
-        riskLevel: 'high',
-        lastAssessment: '2024-01-10',
-        status: 'active',
-        industry: 'Data Analytics',
-      },
-      {
-        id: '3',
-        name: 'CloudTech Ltd.',
-        email: 'hello@cloudtech.com',
-        trustScore: 78,
-        riskLevel: 'medium',
-        lastAssessment: '2024-01-12',
-        status: 'active',
-        industry: 'Cloud Services',
-      },
-      {
-        id: '4',
-        name: 'SecureNet Systems',
-        email: 'contact@securenet.com',
-        trustScore: 88,
-        riskLevel: 'low',
-        lastAssessment: '2024-01-14',
-        status: 'pending',
-        industry: 'Cybersecurity',
-      },
-      {
-        id: '5',
-        name: 'NetworkPro Solutions',
-        email: 'info@networkpro.com',
-        trustScore: 62,
-        riskLevel: 'medium',
-        lastAssessment: '2024-01-08',
-        status: 'active',
-        industry: 'Networking',
-      },
-    ];
-    setVendors(mockVendors);
-    setFilteredVendors(mockVendors);
-  }, []);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
 
   useEffect(() => {
     let filtered = vendors;
@@ -102,6 +40,7 @@ const VendorPortal: React.FC = () => {
         (vendor) =>
           vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           vendor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          vendor.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
           vendor.industry.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -111,6 +50,11 @@ const VendorPortal: React.FC = () => {
       filtered = filtered.filter((vendor) => vendor.riskLevel === filterRisk);
     }
 
+    // Apply status filter
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter((vendor) => vendor.status === filterStatus);
+    }
+
     // Apply sorting
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -118,6 +62,8 @@ const VendorPortal: React.FC = () => {
           return b.trustScore - a.trustScore;
         case 'name':
           return a.name.localeCompare(b.name);
+        case 'company':
+          return a.company.localeCompare(b.company);
         case 'lastAssessment':
           return new Date(b.lastAssessment).getTime() - new Date(a.lastAssessment).getTime();
         default:
@@ -126,7 +72,13 @@ const VendorPortal: React.FC = () => {
     });
 
     setFilteredVendors(filtered);
-  }, [vendors, searchTerm, filterRisk, sortBy]);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [vendors, searchTerm, filterRisk, filterStatus, sortBy]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredVendors.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedVendors = filteredVendors.slice(startIndex, startIndex + itemsPerPage);
 
   const getRiskColor = (riskLevel: string) => {
     switch (riskLevel) {
@@ -154,19 +106,83 @@ const VendorPortal: React.FC = () => {
     }
   };
 
+  const exportToCSV = () => {
+    const headers = ['Name', 'Email', 'Company', 'Trust Score', 'Risk Level', 'Status', 'Last Assessment'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredVendors.map(vendor => [
+        vendor.name,
+        vendor.email,
+        vendor.company,
+        vendor.trustScore,
+        vendor.riskLevel,
+        vendor.status,
+        new Date(vendor.lastAssessment).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'vendors.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">Vendor Management</h1>
           <p className="text-gray-400 mt-2">
-            Monitor and manage vendor security assessments
+            Monitor and manage {vendors.length} vendor security assessments
           </p>
         </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Vendor
-        </Button>
+        <div className="flex space-x-3">
+          <Button variant="outline" onClick={exportToCSV}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Vendor
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-white">{vendors.length}</div>
+            <div className="text-gray-400 text-sm mt-1">Total Vendors</div>
+          </div>
+        </Card>
+        <Card className="p-6">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-400">
+              {vendors.filter(v => v.riskLevel === 'low').length}
+            </div>
+            <div className="text-gray-400 text-sm mt-1">Low Risk</div>
+          </div>
+        </Card>
+        <Card className="p-6">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-yellow-400">
+              {vendors.filter(v => v.riskLevel === 'medium').length}
+            </div>
+            <div className="text-gray-400 text-sm mt-1">Medium Risk</div>
+          </div>
+        </Card>
+        <Card className="p-6">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-400">
+              {vendors.filter(v => v.riskLevel === 'high').length}
+            </div>
+            <div className="text-gray-400 text-sm mt-1">High Risk</div>
+          </div>
+        </Card>
       </div>
 
       {/* Filters and Search */}
@@ -180,7 +196,7 @@ const VendorPortal: React.FC = () => {
                 placeholder="Search vendors..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-black/40 border border-blue-500/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/20"
+                className="w-full pl-10 pr-4 py-2 bg-black/40 border border-honey-purple/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-honey-purple focus:ring-1 focus:ring-honey-purple/20"
               />
             </div>
           </div>
@@ -188,7 +204,7 @@ const VendorPortal: React.FC = () => {
             <select
               value={filterRisk}
               onChange={(e) => setFilterRisk(e.target.value)}
-              className="px-4 py-2 bg-black/40 border border-blue-500/20 rounded-lg text-white focus:outline-none focus:border-blue-400"
+              className="px-4 py-2 bg-black/40 border border-honey-purple/20 rounded-lg text-white focus:outline-none focus:border-honey-purple"
             >
               <option value="all">All Risk Levels</option>
               <option value="low">Low Risk</option>
@@ -196,12 +212,23 @@ const VendorPortal: React.FC = () => {
               <option value="high">High Risk</option>
             </select>
             <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 bg-black/40 border border-honey-purple/20 rounded-lg text-white focus:outline-none focus:border-honey-purple"
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="pending">Pending</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 bg-black/40 border border-blue-500/20 rounded-lg text-white focus:outline-none focus:border-blue-400"
+              className="px-4 py-2 bg-black/40 border border-honey-purple/20 rounded-lg text-white focus:outline-none focus:border-honey-purple"
             >
               <option value="trustScore">Sort by Trust Score</option>
               <option value="name">Sort by Name</option>
+              <option value="company">Sort by Company</option>
               <option value="lastAssessment">Sort by Last Assessment</option>
             </select>
           </div>
@@ -235,18 +262,18 @@ const VendorPortal: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700/50">
-              {filteredVendors.map((vendor, index) => (
+              {paginatedVendors.map((vendor, index) => (
                 <motion.tr
                   key={vendor.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: index * 0.05 }}
                   className="hover:bg-gray-800/30 transition-colors"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center mr-3">
-                        <Building2 className="w-5 h-5 text-blue-400" />
+                      <div className="w-10 h-10 bg-honey-purple/20 rounded-lg flex items-center justify-center mr-3">
+                        <Building2 className="w-5 h-5 text-honey-purple" />
                       </div>
                       <div>
                         <div className="text-sm font-medium text-white">
@@ -256,7 +283,7 @@ const VendorPortal: React.FC = () => {
                           {vendor.email}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {vendor.industry}
+                          {vendor.company} • {vendor.industry}
                         </div>
                       </div>
                     </div>
@@ -306,13 +333,13 @@ const VendorPortal: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
-                      <button className="text-blue-400 hover:text-blue-300 transition-colors">
+                      <button className="text-honey-purple hover:text-neon-purple transition-colors">
                         <Eye className="w-4 h-4" />
                       </button>
                       <button className="text-gray-400 hover:text-gray-300 transition-colors">
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button className="text-blue-400 hover:text-blue-300 transition-colors">
+                      <button className="text-honey-blue hover:text-neon-blue transition-colors">
                         <Mail className="w-4 h-4" />
                       </button>
                       <button className="text-yellow-400 hover:text-yellow-300 transition-colors">
@@ -328,35 +355,49 @@ const VendorPortal: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </Card>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-400">
-              {vendors.filter((v) => v.riskLevel === 'low').length}
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-700/50">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-400">
+                Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredVendors.length)} of {filteredVendors.length} vendors
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const page = i + 1;
+                  return (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </Button>
+                  );
+                })}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
-            <div className="text-gray-400 text-sm mt-1">Low Risk Vendors</div>
           </div>
-        </Card>
-        <Card className="p-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-400">
-              {vendors.filter((v) => v.riskLevel === 'medium').length}
-            </div>
-            <div className="text-gray-400 text-sm mt-1">Medium Risk Vendors</div>
-          </div>
-        </Card>
-        <Card className="p-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-red-400">
-              {vendors.filter((v) => v.riskLevel === 'high').length}
-            </div>
-            <div className="text-gray-400 text-sm mt-1">High Risk Vendors</div>
-          </div>
-        </Card>
-      </div>
+        )}
+      </Card>
     </div>
   );
 };

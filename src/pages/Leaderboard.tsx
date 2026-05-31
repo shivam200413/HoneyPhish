@@ -14,21 +14,17 @@ import {
   Target,
   Shield,
 } from 'lucide-react';
+import { useData } from '../contexts/DataContext';
+import { useAuth } from '../hooks/useAuth';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import { Vendor } from '../types';
 
-interface LeaderboardEntry {
-  id: string;
-  name: string;
-  email: string;
-  company: string;
-  score: number;
+interface LeaderboardEntry extends Vendor {
   rank: number;
   previousRank?: number;
-  badge: 'platinum' | 'gold' | 'silver' | 'bronze' | null;
   phishingTestsPassed: number;
   totalTests: number;
-  lastActivity: string;
   isCurrentUser?: boolean;
 }
 
@@ -42,10 +38,11 @@ interface Badge {
 }
 
 const Leaderboard: React.FC = () => {
+  const { vendors } = useData();
+  const { user } = useAuth();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBadge, setFilterBadge] = useState<string>('all');
-  const [currentUserId] = useState('3'); // Mock current user
 
   const badges: Badge[] = [
     {
@@ -83,117 +80,21 @@ const Leaderboard: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Mock leaderboard data
-    const mockEntries: LeaderboardEntry[] = [
-      {
-        id: '1',
-        name: 'Sarah Chen',
-        email: 'sarah.chen@techcorp.com',
-        company: 'TechCorp Solutions',
-        score: 98,
-        rank: 1,
-        previousRank: 2,
-        badge: 'platinum',
-        phishingTestsPassed: 47,
+    // Convert vendors to leaderboard entries
+    const leaderboardEntries: LeaderboardEntry[] = vendors
+      .map((vendor, index) => ({
+        ...vendor,
+        rank: index + 1,
+        previousRank: Math.random() > 0.5 ? index + Math.floor(Math.random() * 3) - 1 : undefined,
+        phishingTestsPassed: Math.floor(Math.random() * 45) + 35,
         totalTests: 48,
-        lastActivity: '2024-01-20T10:30:00Z',
-      },
-      {
-        id: '2',
-        name: 'Michael Rodriguez',
-        email: 'michael.r@securenet.com',
-        company: 'SecureNet Systems',
-        score: 96,
-        rank: 2,
-        previousRank: 1,
-        badge: 'platinum',
-        phishingTestsPassed: 45,
-        totalTests: 47,
-        lastActivity: '2024-01-20T09:15:00Z',
-      },
-      {
-        id: '3',
-        name: 'You',
-        email: 'current.user@company.com',
-        company: 'Your Company',
-        score: 92,
-        rank: 3,
-        previousRank: 4,
-        badge: 'gold',
-        phishingTestsPassed: 43,
-        totalTests: 46,
-        lastActivity: '2024-01-20T11:00:00Z',
-        isCurrentUser: true,
-      },
-      {
-        id: '4',
-        name: 'Emily Johnson',
-        email: 'emily.j@cloudtech.com',
-        company: 'CloudTech Ltd.',
-        score: 89,
-        rank: 4,
-        previousRank: 3,
-        badge: 'gold',
-        phishingTestsPassed: 41,
-        totalTests: 45,
-        lastActivity: '2024-01-19T16:45:00Z',
-      },
-      {
-        id: '5',
-        name: 'David Kim',
-        email: 'david.kim@dataflow.com',
-        company: 'DataFlow Inc.',
-        score: 87,
-        rank: 5,
-        previousRank: 5,
-        badge: 'gold',
-        phishingTestsPassed: 38,
-        totalTests: 44,
-        lastActivity: '2024-01-19T14:20:00Z',
-      },
-      {
-        id: '6',
-        name: 'Lisa Wang',
-        email: 'lisa.wang@networkpro.com',
-        company: 'NetworkPro Solutions',
-        score: 82,
-        rank: 6,
-        previousRank: 7,
-        badge: 'silver',
-        phishingTestsPassed: 35,
-        totalTests: 42,
-        lastActivity: '2024-01-19T12:10:00Z',
-      },
-      {
-        id: '7',
-        name: 'James Wilson',
-        email: 'james.w@startup.com',
-        company: 'Startup Inc.',
-        score: 78,
-        rank: 7,
-        previousRank: 6,
-        badge: 'silver',
-        phishingTestsPassed: 32,
-        totalTests: 41,
-        lastActivity: '2024-01-18T18:30:00Z',
-      },
-      {
-        id: '8',
-        name: 'Maria Garcia',
-        email: 'maria.g@consulting.com',
-        company: 'Consulting Group',
-        score: 71,
-        rank: 8,
-        previousRank: 8,
-        badge: 'bronze',
-        phishingTestsPassed: 28,
-        totalTests: 39,
-        lastActivity: '2024-01-18T15:45:00Z',
-      },
-    ];
+        isCurrentUser: user?.role === 'vendor' && user?.email === vendor.email,
+      }))
+      .sort((a, b) => b.trustScore - a.trustScore)
+      .map((entry, index) => ({ ...entry, rank: index + 1 }));
 
-    setEntries(mockEntries);
-  }, []);
+    setEntries(leaderboardEntries);
+  }, [vendors, user]);
 
   const getBadgeForScore = (score: number): Badge | null => {
     for (const badge of badges) {
@@ -220,7 +121,8 @@ const Leaderboard: React.FC = () => {
                          entry.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          entry.company.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesFilter = filterBadge === 'all' || entry.badge === filterBadge;
+    const badge = getBadgeForScore(entry.trustScore);
+    const matchesFilter = filterBadge === 'all' || (badge && badge.type === filterBadge);
     
     return matchesSearch && matchesFilter;
   });
@@ -248,7 +150,7 @@ const Leaderboard: React.FC = () => {
         </div>
         <div className="flex items-center space-x-4">
           <div className="text-right">
-            <div className="text-2xl font-bold text-blue-400">{entries.length}</div>
+            <div className="text-2xl font-bold text-honey-purple">{entries.length}</div>
             <div className="text-gray-400 text-sm">Total Participants</div>
           </div>
         </div>
@@ -278,7 +180,7 @@ const Leaderboard: React.FC = () => {
                 placeholder="Search by name, email, or company..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-black/40 border border-blue-500/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/20"
+                className="w-full pl-10 pr-4 py-2 bg-black/40 border border-honey-purple/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-honey-purple focus:ring-1 focus:ring-honey-purple/20"
               />
             </div>
           </div>
@@ -286,7 +188,7 @@ const Leaderboard: React.FC = () => {
             <select
               value={filterBadge}
               onChange={(e) => setFilterBadge(e.target.value)}
-              className="px-4 py-2 bg-black/40 border border-blue-500/20 rounded-lg text-white focus:outline-none focus:border-blue-400"
+              className="px-4 py-2 bg-black/40 border border-honey-purple/20 rounded-lg text-white focus:outline-none focus:border-honey-purple"
             >
               <option value="all">All Badges</option>
               <option value="platinum">Platinum</option>
@@ -328,7 +230,7 @@ const Leaderboard: React.FC = () => {
               <AnimatePresence>
                 {filteredEntries.map((entry, index) => {
                   const rankChange = getRankChange(entry);
-                  const badge = getBadgeForScore(entry.score);
+                  const badge = getBadgeForScore(entry.trustScore);
                   
                   return (
                     <motion.tr
@@ -336,9 +238,9 @@ const Leaderboard: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={{ delay: index * 0.05 }}
                       className={`hover:bg-gray-800/30 transition-colors ${
-                        entry.isCurrentUser ? 'bg-blue-600/10 border-l-4 border-l-blue-500' : ''
+                        entry.isCurrentUser ? 'bg-honey-purple/10 border-l-4 border-l-honey-purple' : ''
                       }`}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -352,7 +254,7 @@ const Leaderboard: React.FC = () => {
                               </div>
                             )}
                             <span className={`text-lg font-bold ${
-                              entry.isCurrentUser ? 'text-blue-400' : 'text-white'
+                              entry.isCurrentUser ? 'text-honey-purple' : 'text-white'
                             }`}>
                               #{entry.rank}
                             </span>
@@ -376,19 +278,19 @@ const Leaderboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
-                            entry.isCurrentUser ? 'bg-blue-600/20' : 'bg-gray-600/20'
+                            entry.isCurrentUser ? 'bg-honey-purple/20' : 'bg-gray-600/20'
                           }`}>
                             <Users className={`w-5 h-5 ${
-                              entry.isCurrentUser ? 'text-blue-400' : 'text-gray-400'
+                              entry.isCurrentUser ? 'text-honey-purple' : 'text-gray-400'
                             }`} />
                           </div>
                           <div>
                             <div className={`text-sm font-medium ${
-                              entry.isCurrentUser ? 'text-blue-300' : 'text-white'
+                              entry.isCurrentUser ? 'text-honey-purple' : 'text-white'
                             }`}>
                               {entry.name}
                               {entry.isCurrentUser && (
-                                <span className="ml-2 px-2 py-1 bg-blue-600/20 text-blue-300 text-xs rounded-full">
+                                <span className="ml-2 px-2 py-1 bg-honey-purple/20 text-honey-purple text-xs rounded-full">
                                   You
                                 </span>
                               )}
@@ -401,18 +303,18 @@ const Leaderboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className={`text-2xl font-bold mr-3 ${
-                            entry.score >= 95 ? 'text-purple-400' :
-                            entry.score >= 85 ? 'text-yellow-400' :
-                            entry.score >= 75 ? 'text-gray-400' :
-                            entry.score >= 65 ? 'text-orange-400' : 'text-red-400'
+                            entry.trustScore >= 95 ? 'text-purple-400' :
+                            entry.trustScore >= 85 ? 'text-yellow-400' :
+                            entry.trustScore >= 75 ? 'text-gray-400' :
+                            entry.trustScore >= 65 ? 'text-orange-400' : 'text-red-400'
                           }`}>
-                            {entry.score}
+                            {entry.trustScore}
                           </div>
                           <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden">
                             <motion.div
                               className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
                               initial={{ width: 0 }}
-                              animate={{ width: `${entry.score}%` }}
+                              animate={{ width: `${entry.trustScore}%` }}
                               transition={{ delay: index * 0.1, duration: 1 }}
                             />
                           </div>
@@ -427,7 +329,7 @@ const Leaderboard: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <Target className="w-4 h-4 text-blue-400 mr-2" />
+                          <Target className="w-4 h-4 text-honey-blue mr-2" />
                           <span className="text-white">
                             {entry.phishingTestsPassed}/{entry.totalTests}
                           </span>
@@ -437,7 +339,7 @@ const Leaderboard: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                        {new Date(entry.lastActivity).toLocaleDateString()}
+                        {new Date(entry.lastAssessment).toLocaleDateString()}
                       </td>
                     </motion.tr>
                   );
@@ -450,11 +352,11 @@ const Leaderboard: React.FC = () => {
 
       {/* Current User Highlight */}
       {entries.find(e => e.isCurrentUser) && (
-        <Card className="p-6 border-blue-500/30 bg-blue-600/10">
+        <Card className="p-6 border-honey-purple/30 bg-honey-purple/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center">
-                <Star className="w-6 h-6 text-blue-400" />
+              <div className="w-12 h-12 bg-honey-purple/20 rounded-full flex items-center justify-center">
+                <Star className="w-6 h-6 text-honey-purple" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-white">Your Performance</h3>
@@ -464,8 +366,8 @@ const Leaderboard: React.FC = () => {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-blue-400">
-                {entries.find(e => e.isCurrentUser)?.score}
+              <div className="text-2xl font-bold text-honey-purple">
+                {entries.find(e => e.isCurrentUser)?.trustScore}
               </div>
               <div className="text-gray-400 text-sm">Security Score</div>
             </div>

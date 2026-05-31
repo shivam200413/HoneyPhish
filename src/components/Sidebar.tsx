@@ -10,6 +10,9 @@ import {
   FileText,
   Settings,
   LogOut,
+  Target,
+  Upload,
+  MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -17,15 +20,30 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
 
-  const navigation = [
+  // Role-based navigation
+  const adminNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Vendors', href: '/vendors', icon: Building2 },
-    { name: 'Assessments', href: '/assessment', icon: ClipboardCheck },
     { name: 'Phishing Tests', href: '/phishing', icon: Shield },
-    { name: 'Phishing Inbox', href: '/phishing-inbox', icon: Mail },
-    { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
     { name: 'Audit Logs', href: '/audit', icon: FileText },
   ];
+
+  const vendorNavigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Assessment', href: '/assessment', icon: ClipboardCheck },
+    { name: 'Documents', href: '/documents', icon: Upload },
+    { name: 'AI Assistant', href: '/assistant', icon: MessageCircle },
+    { name: 'Phishing Inbox', href: '/phishing-inbox', icon: Mail },
+  ];
+
+  const sharedNavigation = [
+    { name: 'Phishing Inbox', href: '/phishing-inbox', icon: Mail },
+    { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
+  ];
+
+  const navigation = user?.role === 'admin' 
+    ? [...adminNavigation, ...sharedNavigation]
+    : [...vendorNavigation, ...sharedNavigation];
 
   return (
     <div className="fixed inset-y-0 left-0 z-50 w-64 glassmorphism border-r border-honey-purple/20">
@@ -36,6 +54,17 @@ const Sidebar: React.FC = () => {
             <Shield className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold honeyphish-logo">HoneyPhish</span>
+        </div>
+
+        {/* User Role Badge */}
+        <div className="px-4 py-3 border-b border-honey-purple/20">
+          <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+            user?.role === 'admin' 
+              ? 'bg-red-600/20 text-red-300 border border-red-500/30'
+              : 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
+          }`}>
+            {user?.role === 'admin' ? 'Administrator' : 'Vendor Portal'}
+          </div>
         </div>
 
         {/* Navigation */}
@@ -68,13 +97,15 @@ const Sidebar: React.FC = () => {
           <div className="flex items-center mb-4">
             <div className="w-10 h-10 bg-gradient-to-r from-honey-purple to-honey-blue rounded-full flex items-center justify-center shadow-glow">
               <span className="text-white font-semibold">
-                {user?.email?.[0].toUpperCase()}
+                {user?.name?.[0] || user?.email?.[0].toUpperCase()}
               </span>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-white">{user?.email}</p>
+              <p className="text-sm font-medium text-white">
+                {user?.name || user?.email}
+              </p>
               <p className="text-xs text-gray-400">
-                {user?.user_metadata?.role || 'Admin'}
+                {user?.company || (user?.role === 'admin' ? 'HoneyPhish Admin' : 'Vendor')}
               </p>
             </div>
           </div>

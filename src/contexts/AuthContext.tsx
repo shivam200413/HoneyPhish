@@ -1,22 +1,24 @@
 import React, { createContext, useState, useEffect } from 'react';
-
-export interface User {
-  id: string;
-  email: string;
-  user_metadata?: {
-    role?: string;
-  };
-}
+import { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, role: 'admin' | 'vendor') => Promise<void>;
+  signUp: (email: string, password: string, name: string, company: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Mock vendor data for demonstration
+const mockVendors = [
+  { email: 'sarah.chen@techcorp.com', password: 'vendor123', name: 'Sarah Chen', company: 'TechCorp Solutions' },
+  { email: 'michael.r@securenet.com', password: 'vendor123', name: 'Michael Rodriguez', company: 'SecureNet Systems' },
+  { email: 'emily.j@cloudtech.com', password: 'vendor123', name: 'Emily Johnson', company: 'CloudTech Ltd.' },
+  { email: 'david.kim@dataflow.com', password: 'vendor123', name: 'David Kim', company: 'DataFlow Inc.' },
+  { email: 'lisa.wang@networkpro.com', password: 'vendor123', name: 'Lisa Wang', company: 'NetworkPro Solutions' },
+];
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -31,27 +33,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    // Mock authentication - replace with actual Supabase auth
-    if (email === 'admin@honeyphish.com' && password === 'demo123') {
+  const signIn = async (email: string, password: string, role: 'admin' | 'vendor') => {
+    if (role === 'admin' && email === 'admin@honeyphish.com' && password === 'admin123') {
       const mockUser: User = {
         id: '1',
         email,
-        user_metadata: { role: 'admin' },
+        role: 'admin',
+        name: 'Admin User',
+        user_metadata: { role: 'admin', name: 'Admin User' },
       };
       setUser(mockUser);
       localStorage.setItem('user', JSON.stringify(mockUser));
+    } else if (role === 'vendor') {
+      const vendor = mockVendors.find(v => v.email === email && v.password === password);
+      if (vendor) {
+        const mockUser: User = {
+          id: Date.now().toString(),
+          email,
+          role: 'vendor',
+          name: vendor.name,
+          company: vendor.company,
+          user_metadata: { role: 'vendor', name: vendor.name, company: vendor.company },
+        };
+        setUser(mockUser);
+        localStorage.setItem('user', JSON.stringify(mockUser));
+      } else {
+        throw new Error('Invalid vendor credentials');
+      }
     } else {
       throw new Error('Invalid credentials');
     }
   };
 
-  const signUp = async (email: string, password: string) => {
-    // Mock sign up - replace with actual Supabase auth
+  const signUp = async (email: string, password: string, name: string, company: string) => {
     const mockUser: User = {
       id: Date.now().toString(),
       email,
-      user_metadata: { role: 'vendor' },
+      role: 'vendor',
+      name,
+      company,
+      user_metadata: { role: 'vendor', name, company },
     };
     setUser(mockUser);
     localStorage.setItem('user', JSON.stringify(mockUser));
